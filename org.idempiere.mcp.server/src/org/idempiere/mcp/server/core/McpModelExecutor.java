@@ -73,7 +73,7 @@ public class McpModelExecutor {
     public static String create(String id, JsonObject args, String token, RestApiClient client) {
         return McpExecutorUtils.execute(id, "Create Record", () -> {
             String model = args.get("model").getAsString();
-            JsonObject data = args.get("data").getAsJsonObject();
+            JsonObject data = McpExecutorUtils.requireDataObject(args, true);
             JsonElement response = client.post("/models/" + model, data, token);
             return McpExecutorUtils.wrapJsonContent(id, response);
         });
@@ -83,7 +83,7 @@ public class McpModelExecutor {
         return McpExecutorUtils.execute(id, "Update Record", () -> {
             String model = args.get("model").getAsString();
             JsonElement idEl = args.get("id");
-            JsonObject data = args.get("data").getAsJsonObject();
+            JsonObject data = McpExecutorUtils.requireDataObject(args, true);
 
             String path = "/models/" + model + "/"
                     + (McpExecutorUtils.isInteger(idEl) ? idEl.getAsInt() : idEl.getAsString());
@@ -129,7 +129,7 @@ public class McpModelExecutor {
         return McpExecutorUtils.execute(id, "Add Record Attachment", () -> {
             String tableName = args.get("tableName").getAsString();
             String recordId = args.get("record_id").getAsString();
-            JsonObject data = args.get("data").getAsJsonObject();
+            JsonObject data = McpExecutorUtils.requireDataObject(args, true);
             String path = "/models/" + URLEncoder.encode(tableName, StandardCharsets.UTF_8) + "/" + recordId
                     + "/attachments";
             JsonElement response = client.post(path, data, token);
@@ -141,8 +141,12 @@ public class McpModelExecutor {
         return McpExecutorUtils.execute(id, "Delete Record Attachments", () -> {
             String tableName = args.get("tableName").getAsString();
             String recordId = args.get("record_id").getAsString();
+            String fileName = McpExecutorUtils.optionalString(args, "fileName", "filename", "name");
             String path = "/models/" + URLEncoder.encode(tableName, StandardCharsets.UTF_8) + "/" + recordId
                     + "/attachments";
+            if (fileName != null) {
+                path += "/" + URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+            }
             JsonElement response = client.delete(path, token);
             return McpExecutorUtils.wrapJsonContent(id, response);
         });

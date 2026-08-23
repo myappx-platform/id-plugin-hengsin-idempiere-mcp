@@ -172,8 +172,12 @@ public class McpViewExecutor {
         return McpExecutorUtils.execute(id, "Delete View Record Attachments", () -> {
             String viewName = McpExecutorUtils.slugify(args.get("viewName").getAsString());
             String recordId = args.get("id").getAsString();
+            String fileName = McpExecutorUtils.optionalString(args, "fileName", "filename", "name");
             String path = "/views/" + URLEncoder.encode(viewName, StandardCharsets.UTF_8) + "/" + recordId
                     + "/attachments";
+            if (fileName != null) {
+                path += "/" + URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+            }
             JsonElement response = client.delete(path, token);
             return McpExecutorUtils.wrapJsonContent(id, response);
         });

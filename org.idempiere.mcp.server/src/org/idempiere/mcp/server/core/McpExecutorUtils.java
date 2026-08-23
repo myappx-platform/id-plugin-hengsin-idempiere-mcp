@@ -123,6 +123,76 @@ public class McpExecutorUtils {
         }
     }
 
+    /** First non-blank string among {@code keys}, or null. */
+    public static String optionalString(JsonObject args, String... keys) {
+        if (args == null || keys == null) {
+            return null;
+        }
+        for (String key : keys) {
+            if (key == null || !args.has(key) || args.get(key).isJsonNull()) {
+                continue;
+            }
+            JsonElement el = args.get(key);
+            if (!el.isJsonPrimitive()) {
+                continue;
+            }
+            String v = el.getAsString();
+            if (v != null && !v.isBlank()) {
+                return v.trim();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolve the {@code data} argument as a JSON object.
+     * <p>
+     * LLMs sometimes pass {@code data} as a JSON string (or an empty string).
+     * This coerces stringified objects and fails with a clear message otherwise.
+     *
+     * @param args tool arguments
+     * @param requireNonEmpty when true, empty {@code {}} is rejected
+     */
+    public static JsonObject requireDataObject(JsonObject args, boolean requireNonEmpty) {
+        JsonElement el = args != null ? args.get("data") : null;
+        if (el == null || el.isJsonNull()) {
+            throw new IllegalArgumentException(
+                    "Missing required 'data' object. Pass column/value pairs as a JSON object, "
+                            + "e.g. {\"Name\":\"...\"}. Do not omit data or pass an empty string.");
+        }
+        JsonObject obj;
+        if (el.isJsonObject()) {
+            obj = el.getAsJsonObject();
+        } else if (el.isJsonPrimitive() && el.getAsJsonPrimitive().isString()) {
+            String s = el.getAsString().trim();
+            if (s.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "'data' was an empty string. Pass a JSON object of fields to change, "
+                                + "e.g. {\"Name\":\"...\"}, not \"\".");
+            }
+            JsonElement parsed;
+            try {
+                parsed = com.google.gson.JsonParser.parseString(s);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                        "'data' string is not valid JSON: " + s, e);
+            }
+            if (!parsed.isJsonObject()) {
+                throw new IllegalArgumentException(
+                        "'data' string must parse to a JSON object, got: " + s);
+            }
+            obj = parsed.getAsJsonObject();
+        } else {
+            throw new IllegalArgumentException(
+                    "'data' must be a JSON object (got " + el.getClass().getSimpleName() + ").");
+        }
+        if (requireNonEmpty && obj.size() == 0) {
+            throw new IllegalArgumentException(
+                    "'data' object is empty. Include at least one field to create/update.");
+        }
+        return obj;
+    }
+
     /**
      * convert arbitrary text to slug
      * 

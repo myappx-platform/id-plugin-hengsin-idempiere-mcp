@@ -241,7 +241,8 @@ public class McpServiceImpl implements IMcpService {
                                 new String[] { "record_id", "string", "record id" }));
 
                 tools.add(createTool("idempiere_model_add_record_attachment",
-                                "Add/update attachment by record id and file name",
+                                "Add/update attachment by record id and file name. "
+                                                + "If the same file name already exists, REST returns 409 unless data.overwrite is true.",
                                 new String[] { "tableName", "record_id", "data" },
                                 new String[] { "tableName", "string", "table name."
                                                 + "**Hint**: Check 'idempiere://metadata/models' first to find Table Names."
@@ -249,15 +250,20 @@ public class McpServiceImpl implements IMcpService {
                                                 + "**Hint** 'idempiere_window_get_records' and 'idempiere_window_get_child_tab_records' tool can also be used to search records within a window context." },
                                 new String[] { "record_id", "string", "record id" },
                                 new String[] { "data", "object",
-                                                "JSON Object required keys: 'name' (filename string) and 'data' (base64 encoded file content string)." }));
+                                                "JSON Object required keys: 'name' (filename string) and 'data' (base64 encoded file content string). "
+                                                                + "Optional 'overwrite': true replaces an existing file with the same name (HTTP 409 otherwise)." }));
 
-                tools.add(createTool("idempiere_model_delete_record_attachment", "Delete attachment of a record",
+                tools.add(createTool("idempiere_model_delete_record_attachment",
+                                "Delete attachment of a record. Pass fileName to delete only that file. "
+                                                + "Omitting fileName deletes ALL attachments on the record.",
                                 new String[] { "tableName", "record_id" },
                                 new String[] { "tableName", "string", "table name."
                                                 + "**Hint**: Check 'idempiere://metadata/models' first to find Table Names."
                                                 + "**Hint**: Use the 'idempiere_model_list_models' tools get the list of models (tables)."
                                                 + "**Hint** 'idempiere_window_get_records' and 'idempiere_window_get_child_tab_records' tool can also be used to search records within a window context." },
-                                new String[] { "record_id", "string", "record id" }));
+                                new String[] { "record_id", "string", "record id" },
+                                new String[] { "fileName", "string",
+                                                "Optional. Delete only this file. Omit to delete ALL attachments." }));
 
                 tools.add(createTool("idempiere_model_get_record_attachments_zip",
                                 "Get attachment of a record as zip archive",
@@ -513,16 +519,20 @@ public class McpServiceImpl implements IMcpService {
                                 new String[] { "viewName", "id" },
                                 new String[] { "viewName", "string", "View Name." },
                                 new String[] { "id", "string", "Record ID." }));
-                tools.add(createTool("idempiere_view_add_record_attachment", "Add an attachment to a view record.",
+                tools.add(createTool("idempiere_view_add_record_attachment",
+                                "Add an attachment to a view record. Optional data.overwrite:true replaces same file name.",
                                 new String[] { "viewName", "id", "data" },
                                 new String[] { "viewName", "string", "View Name." },
                                 new String[] { "id", "string", "Record ID." },
                                 new String[] { "data", "object",
-                                                "JSON Object required keys: 'name' (filename string) and 'data' (base64 encoded file content string)." }));
-                tools.add(createTool("idempiere_view_delete_record_attachments", "Delete attachments of a view record.",
+                                                "JSON Object required keys: 'name' (filename string) and 'data' (base64 encoded file content string). Optional overwrite:true to replace same name." }));
+                tools.add(createTool("idempiere_view_delete_record_attachments",
+                                "Delete attachments of a view record. Pass fileName to delete only that file; omit to delete all.",
                                 new String[] { "viewName", "id" },
                                 new String[] { "viewName", "string", "View Name." },
-                                new String[] { "id", "string", "Record ID." }));
+                                new String[] { "id", "string", "Record ID." },
+                                new String[] { "fileName", "string",
+                                                "Optional. Delete only this file. Omit to delete ALL attachments." }));
                 tools.add(createTool("idempiere_view_get_record_attachments_zip",
                                 "Get attachments of a view record as ZIP.",
                                 new String[] { "viewName", "id" },
