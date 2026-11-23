@@ -37,6 +37,11 @@ import com.google.gson.JsonObject;
 public class McpModelExecutor {
 
     public static String search(String id, JsonObject args, String token, RestApiClient client) {
+        String filterTable = null;
+        if (args != null && args.has("model") && args.get("model").isJsonPrimitive()) {
+            filterTable = args.get("model").getAsString();
+        }
+        final String queriedTable = filterTable;
         return McpExecutorUtils.execute(id, "Search Records", () -> {
             String model = args.get("model").getAsString();
             String filter = args.has("filter") ? args.get("filter").getAsString() : "";
@@ -55,7 +60,7 @@ public class McpModelExecutor {
 
             JsonElement response = client.get(sb.toString(), token);
             return McpExecutorUtils.wrapJsonContent(id, response);
-        });
+        }, queriedTable);
     }
 
     public static String get(String id, JsonObject args, String token, RestApiClient client) {

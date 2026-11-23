@@ -63,17 +63,32 @@ public class McpExecutorUtils {
     private static final Pattern SEPARATORS = Pattern.compile("[\\s\\p{Punct}&&[^-]&&[^_]]");
 
     public static String execute(String id, String opName, Callable<String> action) {
+        return execute(id, opName, action, null);
+    }
+
+    /**
+     * @param filterTable table the search was aimed at, so an invalid filter column can name its real table.
+     *                    Null leaves the error text unchanged.
+     */
+    public static String execute(String id, String opName, Callable<String> action, String filterTable) {
         try {
             return action.call();
         } catch (McpApiException e) {
         	CLogger.getCLogger(McpExecutorUtils.class).log(Level.SEVERE, e.getMessage(), e);
-            // Use tool error format (isError: true) instead of JSON-RPC error for tool execution failures
-            return wrapToolError(id, opName + " API Error: " + e.getMessage());
+            return wrapToolError(id, filterHint(opName + " API Error: " + e.getMessage(), filterTable));
         } catch (Exception e) {
         	CLogger.getCLogger(McpExecutorUtils.class).log(Level.SEVERE, e.getMessage(), e);
-            // Use tool error format (isError: true) instead of JSON-RPC error for tool execution failures
-            return wrapToolError(id, opName + " Error: " + e.getMessage());
+            return wrapToolError(id, filterHint(opName + " Error: " + e.getMessage(), filterTable));
         }
+    }
+
+    /** Append the column's real table when the failure is an invalid filter. Other errors stay as they are. */
+    private static String filterHint(String message, String filterTable) {
+        if (filterTable == null || filterTable.isBlank() || message == null
+                || !message.contains("Invalid column for filter")) {
+            return message;
+        }
+        return FilterColumnHint.enrich(message, filterTable);
     }
 
     /**
